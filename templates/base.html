@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Smart Leave Management & Employee Portal{% endblock %}</title>
+
+    <!-- FontAwesome & Inter Font -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom Portal CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    {% if current_user %}
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fa-solid fa-robot"></i>
+            </div>
+            <div>
+                <div class="sidebar-title">SmartLeave AI</div>
+                <div style="font-size: 0.75rem; color: #94a3b8;">Enterprise Portal</div>
+            </div>
+        </div>
+
+        <ul class="sidebar-menu">
+            {% if current_user.role == 'employee' %}
+                <li><a href="{{ url_for('employee.dashboard') }}" class="{% if request.endpoint == 'employee.dashboard' %}active{% endif %}"><i class="fa-solid fa-house-user"></i> Employee Hub</a></li>
+                <li><a href="{{ url_for('employee.my_leaves') }}" class="{% if request.endpoint == 'employee.my_leaves' %}active{% endif %}"><i class="fa-solid fa-calendar-check"></i> My Leave History</a></li>
+            {% elif current_user.role == 'manager' %}
+                <li><a href="{{ url_for('manager.dashboard') }}" class="{% if request.endpoint == 'manager.dashboard' %}active{% endif %}"><i class="fa-solid fa-gauge-high"></i> Manager Hub</a></li>
+                <li><a href="{{ url_for('manager.pending_requests') }}" class="{% if request.endpoint == 'manager.pending_requests' %}active{% endif %}"><i class="fa-solid fa-clock-rotate-left"></i> Pending Approvals</a></li>
+                <li><a href="{{ url_for('manager.team_calendar') }}" class="{% if request.endpoint == 'manager.team_calendar' %}active{% endif %}"><i class="fa-solid fa-users"></i> Team Calendar</a></li>
+                <li><a href="{{ url_for('employee.dashboard') }}"><i class="fa-solid fa-user"></i> My Employee Portal</a></li>
+            {% elif current_user.role == 'admin' %}
+                <li><a href="{{ url_for('admin.dashboard') }}" class="{% if request.endpoint == 'admin.dashboard' %}active{% endif %}"><i class="fa-solid fa-chart-line"></i> Admin Dashboard</a></li>
+                <li><a href="{{ url_for('admin.users') }}" class="{% if request.endpoint == 'admin.users' %}active{% endif %}"><i class="fa-solid fa-users-gear"></i> User Management</a></li>
+                <li><a href="{{ url_for('admin.departments') }}" class="{% if request.endpoint == 'admin.departments' %}active{% endif %}"><i class="fa-solid fa-sitemap"></i> Departments</a></li>
+                <li><a href="{{ url_for('admin.leave_types') }}" class="{% if request.endpoint == 'admin.leave_types' %}active{% endif %}"><i class="fa-solid fa-sliders"></i> Leave Policies</a></li>
+                <li><a href="{{ url_for('admin.reports') }}" class="{% if request.endpoint == 'admin.reports' %}active{% endif %}"><i class="fa-solid fa-file-invoice"></i> Reports & Analytics</a></li>
+                <li><a href="{{ url_for('admin.audit_logs') }}" class="{% if request.endpoint == 'admin.audit_logs' %}active{% endif %}"><i class="fa-solid fa-shield-halved"></i> Audit Logs</a></li>
+                <li><a href="{{ url_for('manager.dashboard') }}"><i class="fa-solid fa-user-tie"></i> Manager View</a></li>
+            {% endif %}
+        </ul>
+
+        <div class="user-profile-badge">
+            <div class="user-avatar">{{ current_user.full_name[0] }}</div>
+            <div style="flex-grow:1; overflow:hidden;">
+                <div style="font-size: 0.88rem; font-weight:600; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">{{ current_user.full_name }}</div>
+                <div style="font-size: 0.75rem; color:#94a3b8; text-transform:capitalize;">{{ current_user.role }}</div>
+            </div>
+            <a href="{{ url_for('auth.logout') }}" style="color:#ef4444; font-size:1.1rem;" title="Logout"><i class="fa-solid fa-power-off"></i></a>
+        </div>
+    </aside>
+    {% endif %}
+
+    <!-- Main Content Wrapper -->
+    <div class="main-wrapper" style="{% if not current_user %}margin-left: 0; width: 100%;{% endif %}">
+        {% if current_user %}
+        <header class="topbar">
+            <h2 style="font-size: 1.2rem; font-weight: 700; color: var(--text-heading);">
+                {% block header_title %}Portal Dashboard{% endblock %}
+            </h2>
+
+            <div class="topbar-actions">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="badge badge-low"><i class="fa-solid fa-brain"></i> AI Engine Active</span>
+                </div>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a>
+            </div>
+        </header>
+        {% endif %}
+
+        <main class="content-container">
+            <!-- Flash Alerts -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <span>{{ message }}</span>
+                            <button onclick="this.parentElement.remove()" style="background:transparent; border:none; cursor:pointer; font-weight:bold;">&times;</button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    {% if current_user %}
+    <!-- Floating AI Assistant Button & Drawer -->
+    <button class="ai-trigger-btn" id="aiChatTrigger" title="AI Leave Assistant">
+        <i class="fa-solid fa-headset"></i>
+    </button>
+
+    <div class="ai-chat-drawer" id="aiChatDrawer">
+        <div class="ai-chat-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <i class="fa-solid fa-robot" style="font-size:1.3rem;"></i>
+                <div>
+                    <strong style="font-size:0.95rem;">Smart Leave Assistant</strong>
+                    <div style="font-size:0.75rem; opacity:0.9;">AI Powered Query Helper</div>
+                </div>
+            </div>
+            <button id="aiChatClose" style="background:transparent; border:none; color:white; font-size:1.2rem; cursor:pointer;">&times;</button>
+        </div>
+
+        <div class="ai-chat-body" id="aiChatBody">
+            <div class="chat-bubble bot">
+                Hello {{ current_user.full_name }}! 👋<br>
+                I am your <strong>AI Smart Leave Assistant</strong>. Ask me about your leave balances, policies, or application status!
+            </div>
+        </div>
+
+        <div class="ai-chat-input-area">
+            <input type="text" id="aiInput" placeholder="Ask AI e.g. 'What is my leave balance?'">
+            <button id="aiSendBtn"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ai_chat.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

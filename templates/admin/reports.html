@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Reports & Analytics - Smart Leave Portal{% endblock %}
+{% block header_title %}Attendance & Leave Reports Analytics{% endblock %}
+
+{% block content %}
+<div class="grid-2">
+    <!-- Chart 1: Leave Type Distribution -->
+    <div class="card">
+        <div class="card-title">
+            <span><i class="fa-solid fa-chart-pie" style="color:var(--primary);"></i> Leave Distribution by Category</span>
+        </div>
+        <div style="height: 300px; position: relative;">
+            <canvas id="typeChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 2: Department Leave Trend -->
+    <div class="card">
+        <div class="card-title">
+            <span><i class="fa-solid fa-chart-column" style="color:var(--secondary);"></i> Approved Leaves by Department</span>
+        </div>
+        <div style="height: 300px; position: relative;">
+            <canvas id="deptChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-title">
+        <span><i class="fa-solid fa-file-csv"></i> Summary Analytics Export</span>
+        <button class="btn btn-primary btn-sm" onclick="alert('Exporting Leave Reports to CSV/Excel format...')">
+            <i class="fa-solid fa-download"></i> Export Data CSV
+        </button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Metric Indicator</th>
+                    <th>Recorded Value</th>
+                    <th>Analytics Insight</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Highest Utilized Leave Category</strong></td>
+                    <td><span class="badge badge-low">Casual Leave (CL)</span></td>
+                    <td>Highest frequency recorded during seasonal holidays.</td>
+                </tr>
+                <tr>
+                    <td><strong>AI Risk Detection Rate</strong></td>
+                    <td><strong>24.5%</strong></td>
+                    <td>Requests flagged with potential department capacity conflicts.</td>
+                </tr>
+                <tr>
+                    <td><strong>Average Manager Approval Response Time</strong></td>
+                    <td><strong>4.2 hours</strong></td>
+                    <td>Fast approval turnover supported by AI recommendation engine.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Include Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Data from Flask
+    const typeLabels = {{ type_labels | tojson }};
+    const typeCounts = {{ type_counts | tojson }};
+    const deptLabels = {{ dept_labels | tojson }};
+    const deptCounts = {{ dept_counts | tojson }};
+
+    // Chart 1: Doughnut Chart for Leave Types
+    const ctx1 = document.getElementById('typeChart').getContext('2d');
+    new Chart(ctx1, {
+        type: 'doughnut',
+        data: {
+            labels: typeLabels,
+            datasets: [{
+                data: typeCounts,
+                backgroundColor: ['#4f46e5', '#0ea5e9', '#8b5cf6', '#10b981']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+
+    // Chart 2: Bar Chart for Departments
+    const ctx2 = document.getElementById('deptChart').getContext('2d');
+    new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: deptLabels,
+            datasets: [{
+                label: 'Approved Leaves',
+                data: deptCounts,
+                backgroundColor: '#4f46e5',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+});
+</script>
+{% endblock %}

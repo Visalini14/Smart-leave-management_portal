@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Register Account - AI Smart Leave Portal{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 40px auto 0 auto;">
+    <div class="card" style="padding: 32px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <h2 style="font-size: 1.4rem; font-weight: 700; color: var(--text-heading);">Create New Portal Account</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Join the AI-Powered Leave Management System</p>
+        </div>
+
+        <form action="{{ url_for('auth.register') }}" method="POST">
+            <div class="form-group">
+                <label for="full_name">Full Name</label>
+                <input type="text" id="full_name" name="full_name" class="form-control" placeholder="e.g. John Doe" required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" class="form-control" placeholder="john_doe" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" class="form-control" placeholder="john@company.com" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-control" placeholder="Minimum 6 characters" required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label for="department_id">Department</label>
+                    <select id="department_id" name="department_id" class="form-control">
+                        {% for d in departments %}
+                            <option value="{{ d.id }}">{{ d.name }} ({{ d.code }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="role">Role</label>
+                    <select id="role" name="role" class="form-control">
+                        <option value="employee">Employee</option>
+                        <option value="manager">Manager</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 8px;">
+                <i class="fa-solid fa-user-plus"></i> Complete Registration
+            </button>
+        </form>
+
+        <div style="margin-top: 20px; text-align: center; font-size: 0.9rem; color: var(--text-muted);">
+            Already registered? <a href="{{ url_for('auth.login') }}" style="color: var(--primary); font-weight: 600; text-decoration: none;">Sign In</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

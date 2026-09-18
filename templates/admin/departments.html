@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Departments - Smart Leave Portal{% endblock %}
+{% block header_title %}Department Structure & Managers{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <h3 class="card-title" style="margin: 0;"><i class="fa-solid fa-sitemap"></i> Department Directory</h3>
+        <button class="btn btn-primary" onclick="openModal('addDeptModal')"><i class="fa-solid fa-plus"></i> Add Department</button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Code</th>
+                    <th>Department Name</th>
+                    <th>Manager / Approver</th>
+                    <th>Employee Count</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in departments %}
+                <tr>
+                    <td>#{{ d.id }}</td>
+                    <td><span class="badge badge-low">{{ d.code }}</span></td>
+                    <td><strong>{{ d.name }}</strong></td>
+                    <td>
+                        {% set mgr = managers | selectattr('id', 'equalto', d.manager_id) | first %}
+                        {% if mgr %}
+                            <i class="fa-solid fa-user-tie" style="color:var(--primary);"></i> {{ mgr.full_name }}
+                        {% else %}
+                            <span style="color:var(--text-muted);">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ d.employees|length }} staff</strong></td>
+                    <td>
+                        <div style="display:flex; gap:6px;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="openEditDeptModal({{ d.id }}, '{{ d.name|escape }}', '{{ d.code|escape }}', '{{ d.manager_id or '' }}')">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                            </button>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="openDeleteDeptModal({{ d.id }}, '{{ d.name|escape }}')">
+                                <i class="fa-solid fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align:center; color:var(--text-muted); padding:24px;">No departments found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Dept Modal -->
+<div class="modal-backdrop" id="addDeptModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="font-size: 1.1rem; font-weight: 700;"><i class="fa-solid fa-building"></i> Add Department</h3>
+            <button class="modal-close" onclick="closeModal('addDeptModal')">&times;</button>
+        </div>
+        <form action="{{ url_for('admin.departments') }}" method="POST">
+            <input type="hidden" name="action" value="create">
+            <div class="form-group">
+                <label>Department Name</label>
+                <input type="text" name="name" class="form-control" placeholder="e.g. Cyber Security" required>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label>Code</label>
+                    <input type="text" name="code" class="form-control" placeholder="SEC" required style="text-transform:uppercase;">
+                </div>
+                <div class="form-group">
+                    <label>Assign Department Manager</label>
+                    <select name="manager_id" class="form-control">
+                        <option value="">None / Unassigned</option>
+                        {% for m in managers %}
+                        <option value="{{ m.id }}">{{ m.full_name }} ({{ m.username }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:12px;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addDeptModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Create Department</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Dept Modal -->
+<div class="modal-backdrop" id="editDeptModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="font-size: 1.1rem; font-weight: 700;"><i class="fa-solid fa-pen-to-square"></i> Edit Department</h3>
+            <button class="modal-close" onclick="closeModal('editDeptModal')">&times;</button>
+        </div>
+        <form action="{{ url_for('admin.departments') }}" method="POST">
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="department_id" id="edit_dept_id">
+            
+            <div class="form-group">
+                <label>Department Name</label>
+                <input type="text" name="name" id="edit_dept_name" class="form-control" required>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label>Code</label>
+                    <input type="text" name="code" id="edit_dept_code" class="form-control" required style="text-transform:uppercase;">
+                </div>
+                <div class="form-group">
+                    <label>Assign Department Manager</label>
+                    <select name="manager_id" id="edit_dept_manager" class="form-control">
+                        <option value="">None / Unassigned</option>
+                        {% for m in managers %}
+                        <option value="{{ m.id }}">{{ m.full_name }} ({{ m.username }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:12px;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editDeptModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Dept Confirmation Modal -->
+<div class="modal-backdrop" id="deleteDeptModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="font-size: 1.1rem; font-weight: 700; color:var(--danger);"><i class="fa-solid fa-trash"></i> Confirm Delete Department</h3>
+            <button class="modal-close" onclick="closeModal('deleteDeptModal')">&times;</button>
+        </div>
+        <form action="{{ url_for('admin.departments') }}" method="POST">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="department_id" id="delete_dept_id">
+            
+            <p style="font-size:0.95rem; color:var(--text-main); margin-bottom:16px;">
+                Are you sure you want to delete <strong id="delete_dept_name" style="color:var(--danger);"></strong>?
+            </p>
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:20px;">
+                Any active employees in this department will be unassigned automatically.
+            </p>
+
+            <div style="display:flex; justify-content:flex-end; gap:12px;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('deleteDeptModal')">Cancel</button>
+                <button type="submit" class="btn btn-danger"><i class="fa-solid fa-trash"></i> Confirm Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openEditDeptModal(id, name, code, managerId) {
+    document.getElementById('edit_dept_id').value = id;
+    document.getElementById('edit_dept_name').value = name;
+    document.getElementById('edit_dept_code').value = code;
+    document.getElementById('edit_dept_manager').value = managerId || '';
+    openModal('editDeptModal');
+}
+
+function openDeleteDeptModal(id, name) {
+    document.getElementById('delete_dept_id').value = id;
+    document.getElementById('delete_dept_name').textContent = name;
+    openModal('deleteDeptModal');
+}
+</script>
+{% endblock %}

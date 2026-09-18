@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - Smart Leave Portal{% endblock %}
+{% block header_title %}User Management & Employee Onboarding{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <h3 class="card-title" style="margin: 0;"><i class="fa-solid fa-users-gear"></i> Employee Directory</h3>
+        <button class="btn btn-primary" onclick="openModal('addUserModal')"><i class="fa-solid fa-user-plus"></i> Onboard New Employee</button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Emp Code</th>
+                    <th>Full Name</th>
+                    <th>Username / Email</th>
+                    <th>Role</th>
+                    <th>Department</th>
+                    <th>Activation Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td><span class="badge badge-low" style="font-family:monospace; font-weight:700;">{{ u.emp_code or 'EMP-ADMIN' }}</span></td>
+                    <td><strong>{{ u.full_name }}</strong><div style="font-size:0.75rem; color:var(--text-muted);">{{ u.designation }}</div></td>
+                    <td><code>{{ u.username }}</code><div style="font-size:0.75rem; color:var(--text-muted);">{{ u.email }}</div></td>
+                    <td><span class="badge badge-low">{{ u.role|capitalize }}</span></td>
+                    <td>{{ u.department.name if u.department else 'Unassigned' }}</td>
+                    <td>
+                        {% if u.status == 'active' %}
+                            <span class="badge badge-approved"><i class="fa-solid fa-check-circle"></i> Active</span>
+                        {% elif u.status == 'pending_activation' %}
+                            <span class="badge badge-pending"><i class="fa-solid fa-clock"></i> Pending Activation</span>
+                        {% else %}
+                            <span class="badge badge-rejected">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display:flex; gap:6px;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="openAdjustQuotaModal({{ u.id }}, '{{ u.full_name }}')">
+                                <i class="fa-solid fa-sliders"></i> Quota
+                            </button>
+                            {% if u.id != current_user.id %}
+                            <form action="{{ url_for('admin.users') }}" method="POST" style="display:inline;">
+                                <input type="hidden" name="action" value="toggle_status">
+                                <input type="hidden" name="user_id" value="{{ u.id }}">
+                                <button type="submit" class="btn btn-sm {% if u.status == 'active' %}btn-danger{% else %}btn-success{% endif %}">
+                                    {% if u.status == 'active' %}<i class="fa-solid fa-user-slash"></i> Deactivate{% else %}<i class="fa-solid fa-user-check"></i> Activate{% endif %}
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Onboard Employee Modal -->
+<div class="modal-backdrop" id="addUserModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="font-size: 1.1rem; font-weight: 700;"><i class="fa-solid fa-user-plus"></i> Onboard New Employee</h3>
+            <button class="modal-close" onclick="closeModal('addUserModal')">&times;</button>
+        </div>
+
+        <form action="{{ url_for('admin.users') }}" method="POST">
+            <input type="hidden" name="action" value="create">
+            
+            <div style="padding: 10px; background: #f0fdf4; border-radius: 8px; border: 1px solid #bbf7d0; font-size: 0.85rem; color: #166534; margin-bottom: 16px;">
+                <i class="fa-solid fa-circle-info"></i> An <strong>Employee Activation Code</strong> will be automatically generated. The employee can activate their account on their first login.
+            </div>
+
+            <div class="form-group">
+                <label>Employee Full Name</label>
+                <input type="text" name="full_name" class="form-control" placeholder="e.g. Rachel Green" required>
+            </div>
+
+            <div class="form-group">
+                <label>Corporate Email Address</label>
+                <input type="email" name="email" class="form-control" placeholder="rachel@company.com" required>
+            </div>
+
+            <div class="form-group">
+                <label>Designation / Job Title</label>
+                <input type="text" name="designation" class="form-control" placeholder="e.g. Software Engineer" value="Software Engineer">
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label>Department</label>
+                    <select name="department_id" class="form-control">
+                        {% for d in departments %}
+                        <option value="{{ d.id }}">{{ d.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select name="role" class="form-control">
+                        <option value="employee">Employee</option>
+                        <option value="manager">Manager</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:16px;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addUserModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Onboard Employee</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Adjust Leave Quota Modal -->
+<div class="modal-backdrop" id="adjustQuotaModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="font-size: 1.1rem; font-weight: 700;"><i class="fa-solid fa-sliders"></i> Allocate Leave Quota</h3>
+            <button class="modal-close" onclick="closeModal('adjustQuotaModal')">&times;</button>
+        </div>
+        <form action="{{ url_for('admin.users') }}" method="POST">
+            <input type="hidden" name="action" value="update_balance">
+            <input type="hidden" name="user_id" id="quota_user_id">
+            
+            <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:16px;">Target Employee: <strong id="quota_user_name" style="color:var(--text-heading);"></strong></p>
+
+            <div class="form-group">
+                <label>Select Leave Category</label>
+                <select name="leave_type_id" class="form-control" required>
+                    {% for lt in leave_types %}
+                    <option value="{{ lt.id }}">{{ lt.name }} ({{ lt.code }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Allocated Annual Days</label>
+                <input type="number" step="0.5" name="allocated_days" class="form-control" placeholder="e.g. 12.0" required>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:16px;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('adjustQuotaModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Quota Allocation</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openAdjustQuotaModal(userId, userName) {
+    document.getElementById('quota_user_id').value = userId;
+    document.getElementById('quota_user_name').textContent = userName;
+    openModal('adjustQuotaModal');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Pending Approvals - Smart Leave Portal{% endblock %}
+{% block header_title %}Pending Requests Queue{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3 class="card-title">Pending Leave Applications</h3>
+    
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Applicant</th>
+                    <th>Department</th>
+                    <th>Type</th>
+                    <th>Dates</th>
+                    <th>Days</th>
+                    <th>AI Risk Rating</th>
+                    <th>AI Recommendation</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in requests %}
+                <tr>
+                    <td><strong>{{ req.user.full_name }}</strong></td>
+                    <td>{{ req.user.department.name if req.user.department else 'N/A' }}</td>
+                    <td>{{ req.leave_type.code }}</td>
+                    <td>{{ req.start_date }} to {{ req.end_date }}</td>
+                    <td><strong>{{ req.total_days }}</strong></td>
+                    <td>
+                        {% if req.ai_analysis %}
+                            <span class="badge badge-{{ req.ai_analysis.risk_level.lower() }}">
+                                {{ req.ai_analysis.risk_level }} Risk ({{ req.ai_analysis.risk_score|round|int }})
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size:0.85rem; color:var(--primary); font-weight:600;">{{ req.ai_analysis.ai_recommendation if req.ai_analysis else '-' }}</td>
+                    <td>
+                        <div style="display:flex; gap:6px;">
+                            <form action="{{ url_for('manager.approve_request', request_id=req.id) }}" method="POST">
+                                <button type="submit" class="btn btn-success btn-sm"><i class="fa-solid fa-check"></i> Approve</button>
+                            </form>
+                            <button class="btn btn-secondary btn-sm" onclick="showRiskDetails({{ req.id }})"><i class="fa-solid fa-brain"></i> AI Analysis</button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align:center; color:var(--text-muted); padding:24px;">No pending leave applications in queue.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- AI Risk Details Modal -->
+<div class="modal-backdrop" id="riskDetailsModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="font-size: 1.2rem; font-weight: 700;"><i class="fa-solid fa-brain" style="color:var(--primary);"></i> AI Leave Risk Breakdown</h3>
+            <button class="modal-close" onclick="closeModal('riskDetailsModal')">&times;</button>
+        </div>
+        <div id="riskModalContent"></div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Employee Dashboard - Smart Leave Portal{% endblock %}
+{% block header_title %}Employee Portal Hub{% endblock %}
+
+{% block content %}
+<!-- Welcome Banner -->
+<div class="card" style="background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; margin-bottom: 32px; padding: 28px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 6px;">Welcome back, {{ user.full_name }}! 👋</h2>
+            <p style="opacity: 0.9; font-size: 0.95rem;">
+                Department: <strong>{{ user.department.name if user.department else 'General' }}</strong> | Designation: <strong>{{ user.designation }}</strong>
+            </p>
+        </div>
+        <button class="btn" onclick="openModal('applyLeaveModal')" style="background-color: white; color: var(--primary); padding: 12px 24px; font-weight: 700;">
+            <i class="fa-solid fa-plus-circle"></i> Apply for Leave
+        </button>
+    </div>
+</div>
+
+<!-- Leave Balances Grid -->
+<h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; color: var(--text-heading);">Leave Quota & Balances</h3>
+<div class="grid-4">
+    {% for b in balances %}
+    <div class="card stat-card">
+        <div style="flex-grow: 1;">
+            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">{{ b.leave_type.name }} ({{ b.leave_type.code }})</div>
+            <div class="stat-val">{{ b.remaining_days }} <span style="font-size:0.9rem; font-weight:normal; color:var(--text-muted);">/ {{ b.allocated_days }} days</span></div>
+            
+            {% set pct = (b.used_days / b.allocated_days * 100) if b.allocated_days > 0 else 0 %}
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: {{ pct }}%; background-color: var(--primary);"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-top:6px;">
+                <span>Used: {{ b.used_days }}</span>
+                <span>Pending: {{ b.pending_days }}</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Recent Applications & Notifications Grid -->
+<div class="grid-2">
+    <!-- Recent Applications -->
+    <div class="card">
+        <div class="card-title">
+            <span><i class="fa-solid fa-clock-rotate-left"></i> My Recent Requests</span>
+            <a href="{{ url_for('employee.my_leaves') }}" style="font-size: 0.85rem; color: var(--primary); text-decoration: none;">View All</a>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Leave Type</th>
+                        <th>Dates</th>
+                        <th>Days</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in recent_requests %}
+                    <tr>
+                        <td><strong>{{ req.leave_type.code }}</strong></td>
+                        <td style="font-size:0.88rem;">{{ req.start_date.strftime('%b %d') }} - {{ req.end_date.strftime('%b %d') }}</td>
+                        <td>{{ req.total_days }}</td>
+                        <td><span class="badge badge-{{ req.status }}">{{ req.status }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align:center; color:var(--text-muted); padding:20px;">No leave requests submitted yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Notifications & AI Tips -->
+    <div class="card">
+        <div class="card-title">
+            <span><i class="fa-solid fa-bell"></i> System Notifications & AI Guidance</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            {% for n in notifications %}
+            <div style="padding: 12px; border-radius: 8px; background: #f8fafc; border-left: 4px solid var(--primary); font-size: 0.88rem;">
+                <div>{{ n.message }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">{{ n.created_at.strftime('%b %d, %H:%M') }}</div>
+            </div>
+            {% else %}
+            <div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+                No unread notifications at this time.
+            </div>
+            {% endfor %}
+
+            <div style="margin-top: 8px; padding: 14px; background: #f0fdf4; border-radius: 8px; border: 1px dashed var(--success); font-size: 0.85rem; color: #166534;">
+                <strong>💡 Smart Tip:</strong> Submit leave requests at least 3 days in advance to minimize team capacity conflicts and speed up manager approval!
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Apply Leave Modal Dialog -->
+<div class="modal-backdrop" id="applyLeaveModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="font-size: 1.2rem; font-weight: 700;"><i class="fa-solid fa-paper-plane" style="color:var(--primary);"></i> Apply for Leave</h3>
+            <button class="modal-close" onclick="closeModal('applyLeaveModal')">&times;</button>
+        </div>
+
+        <form action="{{ url_for('employee.apply_leave') }}" method="POST">
+            <div class="form-group">
+                <label for="apply_leave_type">Leave Type</label>
+                <select id="apply_leave_type" name="leave_type_id" class="form-control" required>
+                    <option value="" disabled selected>Select Leave Category</option>
+                    {% for lt in leave_types %}
+                    <option value="{{ lt.id }}">{{ lt.name }} ({{ lt.code }}) - Max {{ lt.max_days_per_year }} days/yr</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label for="apply_start_date">Start Date</label>
+                    <input type="date" id="apply_start_date" name="start_date" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="apply_end_date">End Date</label>
+                    <input type="date" id="apply_end_date" name="end_date" class="form-control" required>
+                </div>
+            </div>
+
+            <div id="calculated_days_badge" style="font-size: 0.85rem; font-weight: 600; color: var(--primary); margin-bottom: 12px;"></div>
+
+            <!-- Dynamic AI Precheck Feedback Area -->
+            <div id="ai_precheck_feedback" style="display: none;"></div>
+
+            <div class="form-group" style="margin-top: 16px;">
+                <label for="apply_reason">Reason for Leave</label>
+                <textarea id="apply_reason" name="reason" rows="3" class="form-control" placeholder="Provide details regarding your leave request..." required></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('applyLeaveModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Submit Request</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

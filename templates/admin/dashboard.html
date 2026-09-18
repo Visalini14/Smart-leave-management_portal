@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Smart Leave Portal{% endblock %}
+{% block header_title %}System Administration & Overview{% endblock %}
+
+{% block content %}
+<!-- Top Metrics Row -->
+<div class="grid-4">
+    <div class="card stat-card">
+        <div>
+            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Total Employees</div>
+            <div class="stat-val">{{ total_users }}</div>
+        </div>
+        <div class="stat-icon" style="background-color: var(--info-light); color: var(--info);"><i class="fa-solid fa-users"></i></div>
+    </div>
+
+    <div class="card stat-card">
+        <div>
+            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Departments</div>
+            <div class="stat-val">{{ total_departments }}</div>
+        </div>
+        <div class="stat-icon" style="background-color: var(--primary-light); color: var(--primary);"><i class="fa-solid fa-sitemap"></i></div>
+    </div>
+
+    <div class="card stat-card">
+        <div>
+            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Total Leave Requests</div>
+            <div class="stat-val">{{ total_requests }}</div>
+        </div>
+        <div class="stat-icon" style="background-color: var(--warning-light); color: var(--warning);"><i class="fa-solid fa-receipt"></i></div>
+    </div>
+
+    <div class="card stat-card">
+        <div>
+            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Pending Approvals</div>
+            <div class="stat-val" style="color: var(--warning);">{{ pending_requests }}</div>
+        </div>
+        <div class="stat-icon" style="background-color: var(--danger-light); color: var(--danger);"><i class="fa-solid fa-clock"></i></div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- Quick Management Shortcuts -->
+    <div class="card">
+        <div class="card-title">
+            <span><i class="fa-solid fa-sliders"></i> Quick Admin Shortcuts</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <a href="{{ url_for('admin.users') }}" class="btn btn-secondary" style="padding: 16px; justify-content: flex-start;">
+                <i class="fa-solid fa-user-plus" style="font-size: 1.2rem; color: var(--primary);"></i>
+                <div style="text-align: left;">
+                    <div>Manage Users</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Add, edit or deactivate</div>
+                </div>
+            </a>
+
+            <a href="{{ url_for('admin.departments') }}" class="btn btn-secondary" style="padding: 16px; justify-content: flex-start;">
+                <i class="fa-solid fa-building" style="font-size: 1.2rem; color: var(--secondary);"></i>
+                <div style="text-align: left;">
+                    <div>Departments</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Assign dept managers</div>
+                </div>
+            </a>
+
+            <a href="{{ url_for('admin.leave_types') }}" class="btn btn-secondary" style="padding: 16px; justify-content: flex-start;">
+                <i class="fa-solid fa-calendar-plus" style="font-size: 1.2rem; color: var(--accent);"></i>
+                <div style="text-align: left;">
+                    <div>Leave Policies</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Quotas & rules</div>
+                </div>
+            </a>
+
+            <a href="{{ url_for('admin.reports') }}" class="btn btn-secondary" style="padding: 16px; justify-content: flex-start;">
+                <i class="fa-solid fa-chart-pie" style="font-size: 1.2rem; color: var(--success);"></i>
+                <div style="text-align: left;">
+                    <div>Analytics Reports</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Visual leave charts</div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent Audit Activity -->
+    <div class="card">
+        <div class="card-title">
+            <span><i class="fa-solid fa-shield-halved"></i> Recent Audit Logs</span>
+            <a href="{{ url_for('admin.audit_logs') }}" style="font-size:0.85rem; color:var(--primary); text-decoration:none;">View All</a>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            {% for log in recent_logs %}
+            <div style="padding:10px 12px; background:#f8fafc; border-radius:6px; font-size:0.85rem; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <strong>{{ log.action }}</strong> - {{ log.details }}
+                </div>
+                <span style="font-size:0.75rem; color:var(--text-muted);">{{ log.timestamp.strftime('%H:%M:%S') }}</span>
+            </div>
+            {% else %}
+            <div style="color:var(--text-muted); font-size:0.9rem; text-align:center;">No recent audit events.</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

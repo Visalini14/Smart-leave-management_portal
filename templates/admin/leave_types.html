@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Leave Policies - Smart Leave Portal{% endblock %}
+{% block header_title %}Leave Types & Policy Configuration{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <h3 class="card-title" style="margin: 0;"><i class="fa-solid fa-sliders"></i> System Leave Types & Quotas</h3>
+        <button class="btn btn-primary" onclick="openModal('addLeaveTypeModal')"><i class="fa-solid fa-plus"></i> Add Leave Policy</button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Code</th>
+                    <th>Leave Name</th>
+                    <th>Annual Max Quota</th>
+                    <th>Requires Approval</th>
+                    <th>Description</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lt in leave_types %}
+                <tr>
+                    <td>#{{ lt.id }}</td>
+                    <td><span class="badge badge-low">{{ lt.code }}</span></td>
+                    <td><strong>{{ lt.name }}</strong></td>
+                    <td><strong>{{ lt.max_days_per_year }} days</strong></td>
+                    <td><span class="badge badge-approved">Yes</span></td>
+                    <td style="color:var(--text-muted); font-size:0.85rem;">{{ lt.description }}</td>
+                    <td>
+                        <div style="display:flex; gap:6px;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="openEditLeaveTypeModal({{ lt.id }}, '{{ lt.name|escape }}', '{{ lt.code|escape }}', {{ lt.max_days_per_year }}, '{{ (lt.description or '')|escape }}')">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                            </button>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="openDeleteLeaveTypeModal({{ lt.id }}, '{{ lt.name|escape }}')">
+                                <i class="fa-solid fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align:center; color:var(--text-muted); padding:24px;">No leave policies configured.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Leave Type Modal -->
+<div class="modal-backdrop" id="addLeaveTypeModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="font-size: 1.1rem; font-weight: 700;"><i class="fa-solid fa-plus"></i> Add Leave Type</h3>
+            <button class="modal-close" onclick="closeModal('addLeaveTypeModal')">&times;</button>
+        </div>
+        <form action="{{ url_for('admin.leave_types') }}" method="POST">
+            <input type="hidden" name="action" value="create">
+            <div class="form-group">
+                <label>Leave Category Name</label>
+                <input type="text" name="name" class="form-control" placeholder="e.g. Sabbatical Leave" required>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label>Code</label>
+                    <input type="text" name="code" class="form-control" placeholder="SAB" required style="text-transform:uppercase;">
+                </div>
+                <div class="form-group">
+                    <label>Max Days Per Year</label>
+                    <input type="number" name="max_days_per_year" class="form-control" value="10" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea name="description" class="form-control" rows="2"></textarea>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:12px;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addLeaveTypeModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Policy</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Leave Type Modal -->
+<div class="modal-backdrop" id="editLeaveTypeModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="font-size: 1.1rem; font-weight: 700;"><i class="fa-solid fa-pen-to-square"></i> Edit Leave Policy</h3>
+            <button class="modal-close" onclick="closeModal('editLeaveTypeModal')">&times;</button>
+        </div>
+        <form action="{{ url_for('admin.leave_types') }}" method="POST">
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="leave_type_id" id="edit_lt_id">
+            
+            <div class="form-group">
+                <label>Leave Category Name</label>
+                <input type="text" name="name" id="edit_lt_name" class="form-control" required>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label>Code</label>
+                    <input type="text" name="code" id="edit_lt_code" class="form-control" required style="text-transform:uppercase;">
+                </div>
+                <div class="form-group">
+                    <label>Max Days Per Year</label>
+                    <input type="number" name="max_days_per_year" id="edit_lt_max_days" class="form-control" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea name="description" id="edit_lt_desc" class="form-control" rows="2"></textarea>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:12px;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editLeaveTypeModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Leave Type Confirmation Modal -->
+<div class="modal-backdrop" id="deleteLeaveTypeModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="font-size: 1.1rem; font-weight: 700; color:var(--danger);"><i class="fa-solid fa-trash"></i> Confirm Delete Policy</h3>
+            <button class="modal-close" onclick="closeModal('deleteLeaveTypeModal')">&times;</button>
+        </div>
+        <form action="{{ url_for('admin.leave_types') }}" method="POST">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="leave_type_id" id="delete_lt_id">
+            
+            <p style="font-size:0.95rem; color:var(--text-main); margin-bottom:16px;">
+                Are you sure you want to delete <strong id="delete_lt_name" style="color:var(--danger);"></strong>?
+            </p>
+
+            <div style="display:flex; justify-content:flex-end; gap:12px;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('deleteLeaveTypeModal')">Cancel</button>
+                <button type="submit" class="btn btn-danger"><i class="fa-solid fa-trash"></i> Confirm Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openEditLeaveTypeModal(id, name, code, maxDays, desc) {
+    document.getElementById('edit_lt_id').value = id;
+    document.getElementById('edit_lt_name').value = name;
+    document.getElementById('edit_lt_code').value = code;
+    document.getElementById('edit_lt_max_days').value = maxDays;
+    document.getElementById('edit_lt_desc').value = desc || '';
+    openModal('editLeaveTypeModal');
+}
+
+function openDeleteLeaveTypeModal(id, name) {
+    document.getElementById('delete_lt_id').value = id;
+    document.getElementById('delete_lt_name').textContent = name;
+    openModal('deleteLeaveTypeModal');
+}
+</script>
+{% endblock %}

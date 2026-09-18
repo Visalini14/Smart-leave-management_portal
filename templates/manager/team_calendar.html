@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Team Leave Calendar - Smart Leave Portal{% endblock %}
+{% block header_title %}Team Schedule & Approved Leaves{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-title">
+        <span><i class="fa-solid fa-users"></i> Approved Team Leave Schedule</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Department</th>
+                    <th>Leave Type</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Duration</th>
+                    <th>Approved Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in leaves %}
+                <tr>
+                    <td><strong>{{ l.user.full_name }}</strong></td>
+                    <td>{{ l.user.department.name if l.user.department else 'N/A' }}</td>
+                    <td><span class="badge badge-low">{{ l.leave_type.code }}</span></td>
+                    <td>{{ l.start_date }}</td>
+                    <td>{{ l.end_date }}</td>
+                    <td><strong>{{ l.total_days }} day(s)</strong></td>
+                    <td><span class="badge badge-approved">Approved</span></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align:center; color:var(--text-muted); padding:24px;">No upcoming approved leaves for team members.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

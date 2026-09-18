@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Manager Dashboard - Smart Leave Portal{% endblock %}
+{% block header_title %}Manager Approval & Team Capacity Hub{% endblock %}
+
+{% block content %}
+<!-- Top Metrics Row -->
+<div class="grid-4">
+    <div class="card stat-card">
+        <div>
+            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Pending Approvals</div>
+            <div class="stat-val">{{ pending_requests|length }}</div>
+        </div>
+        <div class="stat-icon" style="background-color: var(--warning-light); color: var(--warning);"><i class="fa-solid fa-hourglass-half"></i></div>
+    </div>
+
+    <div class="card stat-card">
+        <div>
+            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">High Risk Flags</div>
+            <div class="stat-val" style="color: var(--danger);">{{ high_risk_count }}</div>
+        </div>
+        <div class="stat-icon" style="background-color: var(--danger-light); color: var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i></div>
+    </div>
+
+    <div class="card stat-card">
+        <div>
+            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Medium Risk Flags</div>
+            <div class="stat-val" style="color: var(--warning);">{{ med_risk_count }}</div>
+        </div>
+        <div class="stat-icon" style="background-color: var(--warning-light); color: var(--warning);"><i class="fa-solid fa-shield-cat"></i></div>
+    </div>
+
+    <div class="card stat-card">
+        <div>
+            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Low Risk / Clear</div>
+            <div class="stat-val" style="color: var(--success);">{{ low_risk_count }}</div>
+        </div>
+        <div class="stat-icon" style="background-color: var(--success-light); color: var(--success);"><i class="fa-solid fa-circle-check"></i></div>
+    </div>
+</div>
+
+<!-- Pending Approvals with AI Risk Analyzer -->
+<div class="card" style="margin-bottom: 32px;">
+    <div class="card-title">
+        <span><i class="fa-solid fa-brain" style="color:var(--primary);"></i> Pending Leave Approvals & AI Risk Analysis</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Applicant</th>
+                    <th>Leave Type</th>
+                    <th>Dates</th>
+                    <th>Days</th>
+                    <th>AI Risk Level</th>
+                    <th>AI Recommendation</th>
+                    <th>AI Details</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in pending_requests %}
+                <tr>
+                    <td>
+                        <strong>{{ req.user.full_name }}</strong>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">{{ req.user.designation }}</div>
+                    </td>
+                    <td>{{ req.leave_type.name }}</td>
+                    <td style="font-size:0.88rem;">{{ req.start_date }} to {{ req.end_date }}</td>
+                    <td><strong>{{ req.total_days }}</strong></td>
+                    <td>
+                        {% if req.ai_analysis %}
+                            <span class="badge badge-{{ req.ai_analysis.risk_level.lower() }}">
+                                {{ req.ai_analysis.risk_level }} ({{ req.ai_analysis.risk_score|round|int }})
+                            </span>
+                        {% else %}
+                            <span class="badge badge-cancelled">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size:0.85rem; max-width:200px;">
+                        {% if req.ai_analysis %}
+                            <span style="font-weight:600; color:var(--primary);">{{ req.ai_analysis.ai_recommendation }}</span>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-secondary btn-sm" onclick="showRiskDetails({{ req.id }})">
+                            <i class="fa-solid fa-magnifying-glass-chart"></i> View AI Factors
+                        </button>
+                    </td>
+                    <td>
+                        <div style="display:flex; gap:6px;">
+                            <!-- Approve Form -->
+                            <form action="{{ url_for('manager.approve_request', request_id=req.id) }}" method="POST" style="display:inline;">
+                                <button type="submit" class="btn btn-success btn-sm" title="Approve Leave"><i class="fa-solid fa-check"></i> Approve</button>
+                            </form>
+                            <!-- Reject Modal Trigger -->
+                            <button type="button" class="btn btn-danger btn-sm" onclick="openRejectModal({{ req.id }})" title="Reject Leave"><i class="fa-solid fa-xmark"></i> Reject</button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align:center; color:var(--text-muted); padding:24px;">No pending leave applications awaiting approval.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- AI Risk Details Modal -->
+<div class="modal-backdrop" id="riskDetailsModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="font-size: 1.2rem; font-weight: 700;"><i class="fa-solid fa-brain" style="color:var(--primary);"></i> AI Leave Risk Breakdown</h3>
+            <button class="modal-close" onclick="closeModal('riskDetailsModal')">&times;</button>
+        </div>
+        <div id="riskModalContent">
+            <!-- Dynamic Content Injected via main.js -->
+        </div>
+    </div>
+</div>
+
+<!-- Reject Reason Modal -->
+<div class="modal-backdrop" id="rejectReasonModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="font-size: 1.1rem; font-weight: 700; color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> Reject Leave Request</h3>
+            <button class="modal-close" onclick="closeModal('rejectReasonModal')">&times;</button>
+        </div>
+        <form id="rejectForm" method="POST">
+            <div class="form-group">
+                <label for="reject_comments">Rejection Reason / Comments</label>
+                <textarea id="reject_comments" name="comments" class="form-control" rows="3" placeholder="Provide reason for rejecting this leave request..." required></textarea>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:12px;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('rejectReasonModal')">Cancel</button>
+                <button type="submit" class="btn btn-danger"><i class="fa-solid fa-xmark"></i> Confirm Rejection</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openRejectModal(reqId) {
+    const form = document.getElementById('rejectForm');
+    form.action = `/manager/reject/${reqId}`;
+    openModal('rejectReasonModal');
+}
+</script>
+{% endblock %}

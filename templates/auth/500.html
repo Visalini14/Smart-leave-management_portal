@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Internal Error - 500{% endblock %}
+{% block content %}
+<div style="text-align: center; padding: 60px 20px;">
+    <div style="font-size: 4rem; color: var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i></div>
+    <h2 style="margin-top: 16px; font-size: 1.8rem;">500 - Server Exception</h2>
+    <p style="color: var(--text-muted); margin-top: 8px;">An unexpected error occurred. Please try again later or contact portal support.</p>
+    <a href="{{ url_for('auth.index') }}" class="btn btn-primary" style="margin-top: 24px;">Return Home</a>
+</div>
+{% endblock %}

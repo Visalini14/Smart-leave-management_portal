@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}My Leave History - Smart Leave Portal{% endblock %}
+{% block header_title %}My Leave Application History{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <h3 class="card-title" style="margin: 0;">Leave Records & Status</h3>
+
+        <!-- Status Filter Tabs -->
+        <div style="display: flex; gap: 8px;">
+            <a href="{{ url_for('employee.my_leaves', status='all') }}" class="btn btn-sm {% if current_filter == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">All</a>
+            <a href="{{ url_for('employee.my_leaves', status='pending') }}" class="btn btn-sm {% if current_filter == 'pending' %}btn-primary{% else %}btn-secondary{% endif %}">Pending</a>
+            <a href="{{ url_for('employee.my_leaves', status='approved') }}" class="btn btn-sm {% if current_filter == 'approved' %}btn-primary{% else %}btn-secondary{% endif %}">Approved</a>
+            <a href="{{ url_for('employee.my_leaves', status='rejected') }}" class="btn btn-sm {% if current_filter == 'rejected' %}btn-primary{% else %}btn-secondary{% endif %}">Rejected</a>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Req #</th>
+                    <th>Type</th>
+                    <th>Date Range</th>
+                    <th>Days</th>
+                    <th>AI Risk Rating</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Manager Feedback</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in requests %}
+                <tr>
+                    <td>#{{ req.id }}</td>
+                    <td><strong>{{ req.leave_type.name }}</strong></td>
+                    <td style="font-size:0.88rem;">{{ req.start_date }} to {{ req.end_date }}</td>
+                    <td><strong>{{ req.total_days }}</strong></td>
+                    <td>
+                        {% if req.ai_analysis %}
+                            <span class="badge badge-{{ req.ai_analysis.risk_level.lower() }}">
+                                {{ req.ai_analysis.risk_level }} Risk ({{ req.ai_analysis.risk_score|round|int }})
+                            </span>
+                        {% else %}
+                            <span class="badge badge-cancelled">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{{ req.reason }}">{{ req.reason }}</td>
+                    <td><span class="badge badge-{{ req.status }}">{{ req.status }}</span></td>
+                    <td style="font-size:0.85rem; color:var(--text-muted);">{{ req.manager_comments or '-' }}</td>
+                    <td>
+                        {% if req.status == 'pending' %}
+                        <form action="{{ url_for('employee.cancel_leave', request_id=req.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to cancel this pending request?');">
+                            <button type="submit" class="btn btn-danger btn-sm"><i class="fa-solid fa-ban"></i> Cancel</button>
+                        </form>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 24px;">No leave applications found for this filter.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

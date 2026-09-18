@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Account Activation - Smart Leave Portal{% endblock %}
+
+{% block content %}
+<div style="max-width: 480px; margin: 40px auto 0 auto;">
+    <div class="card" style="padding: 36px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <div style="width: 54px; height: 54px; background: linear-gradient(135deg, var(--primary), var(--accent)); border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 24px; margin-bottom: 12px;">
+                <i class="fa-solid fa-key"></i>
+            </div>
+            <h2 style="font-size: 1.4rem; font-weight: 700; color: var(--text-heading);">First-Time Account Activation</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Enter your assigned Employee Code to set up your login credentials</p>
+        </div>
+
+        <form action="{{ url_for('auth.activate') }}" method="POST">
+            <div class="form-group">
+                <label for="emp_code"><i class="fa-solid fa-id-card"></i> Employee Activation Code</label>
+                <input type="text" id="emp_code" name="emp_code" class="form-control" placeholder="e.g. EMP-1006" value="{{ emp_code or '' }}" required autofocus style="text-transform: uppercase; font-weight: 600; letter-spacing: 1px;">
+            </div>
+
+            {% if user %}
+            <div style="padding: 12px; background: #eef2ff; border-radius: 8px; margin-bottom: 16px; font-size: 0.88rem; color: var(--primary-hover);">
+                <div><strong>Employee Found:</strong> {{ user.full_name }}</div>
+                <div><strong>Department:</strong> {{ user.department.name if user.department else 'General' }}</div>
+            </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="username"><i class="fa-solid fa-user"></i> Choose Your Username</label>
+                <input type="text" id="username" name="username" class="form-control" placeholder="e.g. rachel_green" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password"><i class="fa-solid fa-lock"></i> Set Password</label>
+                <input type="password" id="password" name="password" class="form-control" placeholder="Minimum 6 characters" required>
+            </div>
+
+            <div class="form-group">
+                <label for="confirm_password"><i class="fa-solid fa-lock-open"></i> Confirm Password</label>
+                <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="Re-enter password" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 8px;">
+                <i class="fa-solid fa-circle-check"></i> Activate My Account
+            </button>
+        </form>
+
+        <div style="margin-top: 24px; text-align: center; font-size: 0.9rem; color: var(--text-muted);">
+            Already activated your account? <a href="{{ url_for('auth.login') }}" style="color: var(--primary); font-weight: 600; text-decoration: none;">Sign In</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

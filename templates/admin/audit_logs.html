@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Logs - Smart Leave Portal{% endblock %}
+{% block header_title %}System Audit Trail & Event Logs{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-title">
+        <span><i class="fa-solid fa-shield-halved"></i> Security & Operation Audit Logs</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Log ID</th>
+                    <th>Timestamp</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Details</th>
+                    <th>IP Address</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>#{{ log.id }}</td>
+                    <td style="font-size:0.85rem; color:var(--text-muted);">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td><strong>{{ log.user.full_name if log.user else 'System' }}</strong></td>
+                    <td><span class="badge badge-low">{{ log.action }}</span></td>
+                    <td style="font-size:0.88rem;">{{ log.details }}</td>
+                    <td><code>{{ log.ip_address }}</code></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align:center; color:var(--text-muted); padding:24px;">No audit log records found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
