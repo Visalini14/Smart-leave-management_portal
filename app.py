@@ -50,6 +50,11 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        try:
+            from seed_helper import auto_seed_if_empty
+            auto_seed_if_empty()
+        except Exception as e:
+            print(f"Auto-seed exception: {e}")
 
     return app
 
