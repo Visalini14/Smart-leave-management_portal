@@ -12,10 +12,8 @@ else:
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'smart-leave-ai-portal-secret-key-2026'
     
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + db_path
-        
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # MongoDB Connection URI (e.g. MongoDB Atlas cloud cluster or local mongodb)
+    MONGO_URI = os.environ.get('MONGO_URI') or os.environ.get('MONGODB_URI') or 'mongodb://localhost:27017/smart_leave_db'
     
     MAX_DEPT_LEAVE_THRESHOLD_PERCENT = 30.0
     AI_RISK_HIGH_THRESHOLD = 70.0

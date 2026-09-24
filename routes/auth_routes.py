@@ -70,9 +70,9 @@ def activate():
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
 
-        user = User.query.filter_by(emp_code=emp_code).first()
+        user = User.query.filter(db.func.upper(User.emp_code) == emp_code).first()
         if not user:
-            flash('Invalid Employee Code. Please contact your Admin for your assigned activation code.', 'danger')
+            flash(f'Invalid Employee Code ({emp_code}). Please contact your Admin for your assigned activation code.', 'danger')
             return render_template('auth/activate.html', emp_code=emp_code)
 
         if user.status == 'active':
@@ -105,7 +105,7 @@ def activate():
 
     user = None
     if prefill_code:
-        user = User.query.filter_by(emp_code=prefill_code).first()
+        user = User.query.filter(db.func.upper(User.emp_code) == prefill_code.strip().upper()).first()
 
     return render_template('auth/activate.html', emp_code=prefill_code, user=user)
 

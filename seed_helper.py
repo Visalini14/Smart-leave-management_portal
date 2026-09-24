@@ -5,8 +5,8 @@ from services.leave_service import create_leave_request, process_leave_request
 
 def auto_seed_if_empty():
     """Auto-seeds database if departments/leave types do not exist yet (e.g. on Vercel /tmp db)"""
-    if Department.query.first() is not None:
-        return  # DB already populated
+    if User.query.filter_by(username="alex_dev").first() is not None:
+        return  # DB already populated with demo users
 
     print("Auto-seeding empty database...")
     
