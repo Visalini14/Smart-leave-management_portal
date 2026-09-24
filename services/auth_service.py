@@ -12,15 +12,20 @@ def verify_password(stored_hash, password):
 def get_current_user():
     user_id = session.get('user_id')
     if user_id:
-        return db.session.get(User, user_id)
+        user = db.session.get(User, user_id)
+        if not user:
+            session.clear()
+        return user
     return None
 
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
+        user = get_current_user()
+        if not user:
             if request.is_json or request.path.startswith('/api/'):
                 return jsonify({'error': 'Authentication required'}), 401
+            session.clear()
             flash('Please log in to access this page.', 'warning')
             return redirect(url_for('auth.login', next=request.url))
         return f(*args, **kwargs)
@@ -30,14 +35,15 @@ def role_required(*allowed_roles):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            if 'user_id' not in session:
+            user = get_current_user()
+            if not user:
                 if request.is_json or request.path.startswith('/api/'):
                     return jsonify({'error': 'Authentication required'}), 401
+                session.clear()
                 flash('Please log in first.', 'warning')
                 return redirect(url_for('auth.login'))
             
-            user_role = session.get('user_role')
-            if user_role not in allowed_roles:
+            if user.role not in allowed_roles:
                 if request.is_json or request.path.startswith('/api/'):
                     return jsonify({'error': 'Unauthorized access for your role'}), 403
                 flash('Access denied: You do not have permission to view this resource.', 'danger')

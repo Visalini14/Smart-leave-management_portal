@@ -10,13 +10,24 @@ from mongoengine.queryset import Q, QNode
 
 # Initialize MongoEngine connection
 def init_db(app=None):
+    try:
+        if 'default' in mongoengine.connection._connections:
+            return
+    except Exception:
+        pass
+
     mongo_uri = os.environ.get('MONGO_URI') or os.environ.get('MONGODB_URI')
     if app and not mongo_uri:
         mongo_uri = app.config.get('MONGO_URI')
     
     if mongo_uri and mongo_uri.startswith('mongodb'):
         try:
-            mongoengine.connect(host=mongo_uri, serverSelectionTimeoutMS=2000)
+            mongoengine.connect(
+                host=mongo_uri,
+                alias='default',
+                tlsAllowInvalidCertificates=True,
+                serverSelectionTimeoutMS=5000
+            )
             print(f"[MongoDB] Connected successfully to cluster.")
             return
         except Exception as e:
@@ -24,7 +35,7 @@ def init_db(app=None):
     
     # Fallback to mongomock for local testing when no remote/local Mongo service is active
     import mongomock
-    mongoengine.connect('smart_leave_db', mongo_client_class=mongomock.MongoClient)
+    mongoengine.connect('smart_leave_db', alias='default', mongo_client_class=mongomock.MongoClient)
     print("[MongoDB] Connected to in-memory MongoMock database.")
 
 # Monkey patch BaseField to support SQLAlchemy-style query expressions
